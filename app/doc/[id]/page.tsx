@@ -20,8 +20,8 @@ export default function DocumentEditor() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'documents', filter: `id=eq.${id}` },
-        (payload) => {
-          setDoc((prev) => ({ ...prev, content: payload.new.content }))
+        (payload: any) => {
+          setDoc((prev: any) => ({ ...prev, content: payload.new.content }))
         }
       )
       .subscribe()
