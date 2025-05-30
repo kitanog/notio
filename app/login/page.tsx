@@ -1,61 +1,85 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [mode, setMode] = useState<'login' | 'signup' | 'magic'>('login')
+  const [message, setMessage] = useState('')
 
-  const handleLogin = async () => {
-    setLoading(true)
-    setErrorMsg(null)
+  const handleAuth = async () => {
+    setMessage('')
 
-    const { error } = await supabase.auth.signInWithOtp({ email })
-
-    if (error) {
-      setErrorMsg(error.message)
-    } else {
-      setSent(true)
+    if (!email) return setMessage('Please enter your email.')
+    if ((mode === 'login' || mode === 'signup') && !password) {
+      return setMessage('Please enter your password.')
     }
 
-    setLoading(false)
+    let result
+
+    if (mode === 'signup') {
+      result = await supabase.auth.signUp({ email, password })
+    } else if (mode === 'login') {
+      result = await supabase.auth.signInWithPassword({ email, password })
+    } else if (mode === 'magic') {
+      result = await supabase.auth.signInWithOtp({ email })
+      setMessage('Check your email for the login link.')
+      return
+    }
+
+    const { error } = result
+    if (error) {
+      setMessage(`❌ ${error.message}`)
+    } else {
+      setMessage('✅ Logged in! Redirecting...')
+      window.location.href = '/'
+    }
   }
 
   return (
     <div className="p-6 max-w-md mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Log in</h1>
+      <h1 className="text-xl font-bold mb-4">Welcome to Notion Clone</h1>
 
-      {sent ? (
-        <div className="text-green-700 bg-green-100 p-4 rounded">
-          ✅ Check your email for the login link!
-        </div>
-      ) : (
-        <div className="space-y-4">
+      <div className="space-y-4">
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full border p-2"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        {(mode === 'login' || mode === 'signup') && (
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 w-full rounded"
-            placeholder="Enter your email"
+            type="password"
+            placeholder="Password"
+            className="w-full border p-2"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <button
-            onClick={handleLogin}
-            className="bg-blue-600 text-white w-full p-2 rounded disabled:opacity-50"
-            disabled={loading || !email}
-          >
-            {loading ? 'Sending link...' : 'Send Magic Link'}
-          </button>
+        )}
 
-          {errorMsg && (
-            <div className="text-red-600 bg-red-100 p-2 rounded">
-              ⚠️ {errorMsg}
-            </div>
-          )}
+        <button onClick={handleAuth} className="w-full bg-blue-600 text-white py-2 rounded">
+          {mode === 'login' && 'Login with Email & Password'}
+          {mode === 'signup' && 'Sign Up with Email & Password'}
+          {mode === 'magic' && 'Send Magic Link'}
+        </button>
+
+        {message && <p className="text-sm text-center mt-2">{message}</p>}
+
+        <div className="text-center mt-4 text-sm space-y-2">
+          <button onClick={() => setMode('login')} className="text-blue-500 block">
+            Use Email + Password Login
+          </button>
+          <button onClick={() => setMode('signup')} className="text-blue-500 block">
+            Create an Account
+          </button>
+          <button onClick={() => setMode('magic')} className="text-blue-500 block">
+            Use Magic Link
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
