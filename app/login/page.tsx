@@ -29,9 +29,8 @@ export default function LoginPage() {
       return
     }
 
-    const { error } = result
-    if (error) {
-      setMessage(`❌ ${error.message}`)
+    if (result?.error) {
+      setMessage('❌ ${result.error.message}')
     } else {
       setMessage('✅ Logged in! Redirecting...')
       window.location.href = '/'
